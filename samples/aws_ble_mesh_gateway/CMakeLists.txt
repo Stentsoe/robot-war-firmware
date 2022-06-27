@@ -14,7 +14,15 @@ zephyr_library_include_directories(src/events)
 zephyr_library_include_directories(src/cloud)
 
 # NORDIC SDK APP START
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE 
+    src/main.c
+    src/model_handler.c
+)
+
+include_directories(
+    src
+    ../mesh_model_defines
+)
 
 add_subdirectory(src/modules)
 add_subdirectory(src/events)
