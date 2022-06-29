@@ -1,7 +1,7 @@
-.. _ncs_midi:
+.. _robot_wars_gateway:
 
-nRF connect SDK MIDI
-#######################
+Robto wars firmware
+###################
 
 .. contents::
    :local:
