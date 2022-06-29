@@ -294,6 +294,7 @@ static char* json_encode_robot_config_report(int addr)
 	char *msg;
 	char robot_id[8];
 	cJSON *root_obj;
+	int led[4];
 
 	cJSON *robots_obj = cJSON_CreateObject();
 	if (robots_obj == NULL) {
@@ -315,36 +316,23 @@ static char* json_encode_robot_config_report(int addr)
 		}
 	}
 
-	if (!cJSON_AddNumberToObject(robot_obj, "drivetime", robot->cfg.drive_time)) {
+	if (!cJSON_AddNumberToObject(robot_obj, "drivetime_ms", robot->cfg.drive_time)) {
 		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
 		return NULL;
 	}
 
-	if (!cJSON_AddNumberToObject(robot_obj, "rotation", robot->cfg.rotation)) {
+	if (!cJSON_AddNumberToObject(robot_obj, "rotation_degrees", robot->cfg.rotation)) {
 		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
 		return NULL;
 	}
 
-	if (!cJSON_AddNumberToObject(robot_obj, "led_r", robot->cfg.led.r)) {
-		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
-		return NULL;
-	}
+	led[0] = robot->cfg.led.r;
+	led[1] = robot->cfg.led.g;
+	led[2] = robot->cfg.led.b;
+	led[3] = robot->cfg.led.time;
 
-	if (!cJSON_AddNumberToObject(robot_obj, "led_g", robot->cfg.led.g)) {
-		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
-		return NULL;
-	}
-
-	if (!cJSON_AddNumberToObject(robot_obj, "led_b", robot->cfg.led.b)) {
-		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
-		return NULL;
-	}
-
-	if (!cJSON_AddNumberToObject(robot_obj, "led_time", robot->cfg.led.time)) {
-		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
-		return NULL;
-	}
-
+	cJSON *led_obj = cJSON_CreateIntArray(led, 4);
+	cJSON_AddItemToObject(robot_obj, "led", led_obj);
 
 	root_obj = json_create_reported_object(robots_obj, "robots");
 
@@ -360,6 +348,7 @@ static int json_get_delta_robot_config(cJSON *root_obj)
 	cJSON *robots_obj = NULL;
 	cJSON *robot_obj = NULL;
 	cJSON *value_obj = NULL;
+	cJSON *led_value_obj;
 	struct robot_module_event *event;
 
 	robots_obj = json_get_object_in_state(root_obj, "robots");
@@ -371,40 +360,42 @@ static int json_get_delta_robot_config(cJSON *root_obj)
 	struct robot *robot;
 	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
 		sprintf(robot_addr, "%d", robot->addr);
-		LOG_INF("robot->addr: %d, addr string %s", robot->addr, robot_addr);
 		robot_obj = cJSON_GetObjectItem(robots_obj, robot_addr);
 		if (robots_obj == NULL) {
 			continue;
 		}
 
-		value_obj = json_object_decode(robot_obj, "drivetime");
+		value_obj = json_object_decode(robot_obj, "drivetime_ms");
 		if(value_obj != NULL) {
 			robot->cfg.drive_time = value_obj->valueint;
 		}
 
-		value_obj = json_object_decode(robot_obj, "rotation");
+		value_obj = json_object_decode(robot_obj, "rotation_degrees");
 		if(value_obj != NULL) {
 			robot->cfg.rotation = value_obj->valueint;
 		}
 
-		value_obj = json_object_decode(robot_obj, "led_r");
+		value_obj = json_object_decode(robot_obj, "led");
 		if(value_obj != NULL) {
-			robot->cfg.led.r = value_obj->valueint;
-		}
+			led_value_obj = cJSON_GetArrayItem(value_obj, 0);
+			if(led_value_obj != NULL) {
+				robot->cfg.led.r = led_value_obj->valueint;
+			}
 
-		value_obj = json_object_decode(robot_obj, "led_g");
-		if(value_obj != NULL) {
-			robot->cfg.led.g = value_obj->valueint;
-		}
+			led_value_obj = cJSON_GetArrayItem(value_obj, 1);
+			if(led_value_obj != NULL) {
+				robot->cfg.led.g = led_value_obj->valueint;
+			}
 
-		value_obj = json_object_decode(robot_obj, "led_b");
-		if(value_obj != NULL) {
-			robot->cfg.led.b = value_obj->valueint;
-		}
+			led_value_obj = cJSON_GetArrayItem(value_obj, 2);
+			if(led_value_obj != NULL) {
+				robot->cfg.led.b = led_value_obj->valueint;
+			}
 
-		value_obj = json_object_decode(robot_obj, "led_time");
-		if(value_obj != NULL) {
-			robot->cfg.led.time = value_obj->valueint;
+			led_value_obj = cJSON_GetArrayItem(value_obj, 3);
+			if(led_value_obj != NULL) {
+				robot->cfg.led.time = led_value_obj->valueint;
+			}
 		}
 		
 		robot->state = ROBOT_STATE_CONFIGURING;
@@ -534,7 +525,6 @@ static void clear_robot_list(void) {
 	}
 }
 
-
 int n = 1;
 int m = 1;
 
@@ -584,7 +574,6 @@ static void on_state_cloud_connected(struct robot_msg_data *msg)
 		(msg->module.ui.data.button.num == BTN2)) {
 			
 			/* Static module functions. */
-			LOG_INF("%d", m);
 			report_robot_config(m);
 			m++;
 		}
