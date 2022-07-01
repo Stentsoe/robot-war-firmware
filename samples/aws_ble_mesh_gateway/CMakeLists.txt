@@ -16,7 +16,6 @@ zephyr_library_include_directories(src/cloud)
 # NORDIC SDK APP START
 target_sources(app PRIVATE 
     src/main.c
-    src/model_handler.c
 )
 
 include_directories(
