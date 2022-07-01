@@ -21,6 +21,7 @@ extern "C" {
 
 
 enum mesh_module_event_type {
+    MESH_EVT_READY,
 	MESH_EVT_ROBOT_ADDED,
     MESH_EVT_CONFIG_ACK,
     MESH_EVT_MOVEMENT_REPORTED,
