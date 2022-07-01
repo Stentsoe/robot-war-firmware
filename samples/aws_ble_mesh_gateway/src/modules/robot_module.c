@@ -322,7 +322,12 @@ static char* json_encode_robot_config_report(int addr)
 	}
 
 	if (!cJSON_AddNumberToObject(robot_obj, "rotation_degrees", robot->cfg.rotation)) {
-		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
+		LOG_ERR("unable to report rotation config on robot addr %d", addr);
+		return NULL;
+	}
+
+	if (!cJSON_AddNumberToObject(robot_obj, "speed_percentage", robot->cfg.speed)) {
+		LOG_ERR("unable to report speed config on robot addr %d", addr);
 		return NULL;
 	}
 
@@ -332,7 +337,10 @@ static char* json_encode_robot_config_report(int addr)
 	led[3] = robot->cfg.led.time;
 
 	cJSON *led_obj = cJSON_CreateIntArray(led, 4);
-	cJSON_AddItemToObject(robot_obj, "led", led_obj);
+	if (!cJSON_AddItemToObject(robot_obj, "led", led_obj)) {
+		LOG_ERR("unable to report led config on robot addr %d", addr);
+		return NULL;
+	};
 
 	root_obj = json_create_reported_object(robots_obj, "robots");
 
@@ -373,6 +381,11 @@ static int json_get_delta_robot_config(cJSON *root_obj)
 		value_obj = json_object_decode(robot_obj, "rotation_degrees");
 		if(value_obj != NULL) {
 			robot->cfg.rotation = value_obj->valueint;
+		}
+
+		value_obj = json_object_decode(robot_obj, "speed_percentage");
+		if(value_obj != NULL) {
+			robot->cfg.speed = value_obj->valueint;
 		}
 
 		value_obj = json_object_decode(robot_obj, "led");

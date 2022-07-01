@@ -36,6 +36,7 @@ struct robot_led_cfg {
 struct robot_cfg {
 	int rotation;
 	int drive_time;
+	int speed;
 	int revolutions;
 	struct robot_led_cfg led;
 };
