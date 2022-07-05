@@ -1,7 +1,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/mesh/msg.h>
 
-#include "../../mesh_model_defines/robot_movement_srv.h"
+#include "../../common/mesh_model_defines/robot_movement_srv.h"
 #include "model_handler.h"
 
 /* Application handler functions */
@@ -43,7 +43,7 @@ static struct bt_mesh_model sig_models[] = {
 
 static int movement_config_recieved(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
-    struct robot_movement_config *mov_conf = (struct robot_movement_config *)buf->data;
+    struct robot_movement_set_msg *mov_conf = (struct robot_movement_set_msg *)buf->data;
     int err = 0;
     if (app_movement_handler != NULL)
     {

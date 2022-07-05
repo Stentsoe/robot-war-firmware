@@ -1,7 +1,7 @@
 #pragma once
 
 #include <zephyr/bluetooth/mesh.h>
-#include "../../mesh_model_defines/robot_movement_srv.h"
+#include "../../common/mesh_model_defines/robot_movement_srv.h"
 
 typedef void (*movement_received_handler_t)(struct robot_movement_set_msg *);
 typedef void (*start_movement_handler_t)();

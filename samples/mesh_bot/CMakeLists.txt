@@ -20,7 +20,7 @@ target_sources(app PRIVATE
 
 include_directories(
     src
-    ../mesh_model_defines
+    ../common/mesh_model_defines
 )
 
 add_subdirectory(src/modules)
