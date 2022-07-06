@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "Gateway nRF52840"
+
+config GATEWAY_NRF52840_VERSION
+	string "Gateway nRF52840 firmware version"
+	default "0.0.0-development"
+
+config MESH_ROBOT_VERSION_MAX_LEN
+	int "Maximum length of the application firmware version"
+	default 150
+
+config MESH_UART_RX_BUF_SIZE
+	int "UART RX buffer size"
+	default 256
+
+config MESH_UART_RX_BUF_COUNT
+	int "UART RX buffer count"
+	default 4
+
+module = APPLICATION_MODULE
+module-str = Application module
+source "subsys/logging/Kconfig.template.log_config"
+
+module = UART_MODULE
+module-str = Uart module
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
+
+
