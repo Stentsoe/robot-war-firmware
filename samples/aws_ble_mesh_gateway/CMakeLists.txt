@@ -20,7 +20,7 @@ target_sources(app PRIVATE
 
 include_directories(
     src
-    ../mesh_model_defines
+    ../common/nRF9160dk_uart_interface
 )
 
 add_subdirectory(src/modules)
