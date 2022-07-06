@@ -44,7 +44,7 @@ static int handle_robot_movement_done_status(struct bt_mesh_model *model, struct
 
 static const struct bt_mesh_model_op movement_client_ops[] = {
     {
-        OP_VND_ROBOT_MOVEMENT_GET,
+        OP_VND_ROBOT_MOVEMENT_DONE_STATUS,
         sizeof(struct robot_movement_done_status_msg),
         handle_robot_movement_done_status,
     },
