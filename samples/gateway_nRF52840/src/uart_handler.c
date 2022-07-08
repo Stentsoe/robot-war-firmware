@@ -1,38 +1,52 @@
 #include <zephyr.h>
 #include <zephyr/drivers/uart.h>
 
+#include "./robot_movement_cli.h"
 #include "uart_handler.h"
 
 #define MODULE uart
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(MODULE);
+LOG_MODULE_REGISTER(MODULE, CONFIG_UART_MODULE_LOG_LEVEL);
 
 K_MEM_SLAB_DEFINE_STATIC(mesh_uart_rx_slab, CONFIG_MESH_UART_RX_BUF_SIZE, CONFIG_MESH_UART_RX_BUF_COUNT, 4);
 
-static int uart_data_rx_rdy_handler(const struct device* dev, struct uart_event_rx event_data)
+static int uart_data_rx_rdy_handler(const struct device* dev, struct uart_event_rx event_data, struct bt_mesh_robot_config_cli *config_client)
 {
 	static union mesh_uart_msg msg;
+	static size_t current_msg_len = 0; // Length of currently received fragment
 
-	uint8_t *msg_fill_start = ((uint8_t *)&msg) + event_data.offset;
-	memcpy(msg_fill_start, event_data.buf, event_data.len);
+	uint8_t *msg_fill_start = ((uint8_t *)&msg) + current_msg_len;
+	memcpy(msg_fill_start, (event_data.buf + event_data.offset), event_data.len);
+	current_msg_len += event_data.len;
 
-	size_t msg_received_len = event_data.offset + event_data.len;
-	if (msg_received_len < sizeof(msg.header))
+	LOG_DBG("Message fragment received: length: %d offset: %d", event_data.len, event_data.offset);
+	if (current_msg_len < sizeof(msg.header))
 	{
 		return 0; // Header not yet received. Keep waiting for more data.
 	}
 
+	LOG_DBG("Got message with type %d", msg.header.type);
 	switch (msg.header.type)
 	{
 	case HELLO:
 	{
-		if (msg_received_len < sizeof(msg.hello))
+		if (current_msg_len < sizeof(msg.hello))
 		{
 			return 0; // Message not complete. Keep waiting for more data.
 		}
 		LOG_DBG("UART \"HELLO\" received");
 		uart_tx(dev, (uint8_t*)&msg, sizeof(msg.hello), SYS_FOREVER_US);
+		break;
+	}
+	case CLEAR_TO_MOVE: 
+	{
+		if (current_msg_len < sizeof(msg.clear_to_move))
+		{
+			return 0; // Message not complete. Keep waiting for more data.
+		}
+		LOG_DBG("UART \"CLEAR_TO_MOVE\" received");
+		send_clear_to_move(config_client, BT_MESH_ADDR_ALL_NODES);
 		break;
 	}
 	default:
@@ -41,12 +55,14 @@ static int uart_data_rx_rdy_handler(const struct device* dev, struct uart_event_
 		return -EINVAL;
 	}
 	}
+	current_msg_len = 0;
 
 	return 0;
 }
 
 static void uart_callback(const struct device *dev, struct uart_event *event, void *user_data)
 {
+	struct bt_mesh_robot_config_cli *config_client = (struct bt_mesh_robot_config_cli *)user_data;
 	switch (event->type)
 	{
 	case UART_TX_DONE:
@@ -62,7 +78,7 @@ static void uart_callback(const struct device *dev, struct uart_event *event, vo
 	case UART_RX_RDY:
 	{
 		LOG_DBG("UART_RX_RDY");
-		uart_data_rx_rdy_handler(dev, event->data.rx);
+		uart_data_rx_rdy_handler(dev, event->data.rx, config_client);
 		break;
 	}
 	case UART_RX_BUF_REQUEST:
@@ -107,7 +123,7 @@ static void uart_callback(const struct device *dev, struct uart_event *event, vo
 }
 
 
-int init_uart(const struct device *uart_dev)
+int init_uart(const struct device *uart_dev, struct bt_mesh_robot_config_cli *config_client)
 {
 	int err = 0;
 
@@ -118,7 +134,7 @@ int init_uart(const struct device *uart_dev)
 	}
 	LOG_DBG("UART device ready");
 
-	err = uart_callback_set(uart_dev, uart_callback, NULL);
+	err = uart_callback_set(uart_dev, uart_callback, (void*)config_client);
 	if (err)
 	{
 		LOG_ERR("Failed to set UART callback: Error %d", err);

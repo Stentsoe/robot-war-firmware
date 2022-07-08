@@ -420,6 +420,10 @@ static int json_get_delta_robot_config(cJSON *root_obj)
 		APP_EVENT_SUBMIT(event);
 	}
 
+	// TODO: Ensure that this is the correct place to submit this event
+	struct robot_module_event *clear_to_move_event = new_robot_module_event();
+	clear_to_move_event->type = ROBOT_EVT_CLEAR_TO_MOVE;
+	APP_EVENT_SUBMIT(clear_to_move_event);
 	return 0;
 }
 

@@ -14,7 +14,7 @@
 #define MODULE main
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(MODULE);
+LOG_MODULE_REGISTER(MODULE, CONFIG_APPLICATION_MODULE_LOG_LEVEL);
 
 #include "uart_handler.h"
 #include "model_handler.h"
@@ -70,7 +70,7 @@ void main(void)
 		return;
 	}
 
-	err = init_uart(mesh_uart);
+	err = init_uart(mesh_uart, config_client);
 	if (err)
 	{
 		LOG_ERR("Could not initialize UART: Error %d", err);

@@ -73,7 +73,8 @@ static void state_set(enum state_type new_state)
 	state = new_state;
 }
 
-static void uart_tx_state_set(enum uart_tx_state_type new_state) {
+static void uart_tx_state_set(enum uart_tx_state_type new_state)
+{
 	uart_tx_state = new_state;
 }
 
@@ -83,12 +84,7 @@ static void uart_tx_state_set(enum uart_tx_state_type new_state) {
 static const struct device *mesh_uart = DEVICE_DT_GET(DT_ALIAS(uartmesh));
 K_MEM_SLAB_DEFINE_STATIC(mesh_uart_rx_slab, CONFIG_MESH_UART_RX_BUF_SIZE, CONFIG_MESH_UART_RX_BUF_COUNT, 4);
 
-/* Module state handlers. */
 
-/* Message handler for all states. */
-static void on_all_states(struct mesh_msg_data *msg)
-{
-}
 
 /* Event handlers */
 static bool app_event_handler(const struct app_event_header *aeh)
@@ -136,7 +132,16 @@ static int uart_send_hello(void)
 		.header = {
 			.type = HELLO,
 		},
-		.echo = 0x1010
+		.echo = 0x1010};
+	return mesh_uart_send(&msg, sizeof(msg));
+}
+
+static int uart_send_clear_to_move(void)
+{
+	static struct mesh_uart_clear_to_move_msg msg = {
+		.header = {
+			.type = CLEAR_TO_MOVE,
+		},
 	};
 	return mesh_uart_send(&msg, sizeof(msg));
 }
@@ -273,13 +278,14 @@ static int init_uart()
 {
 	int err = 0;
 	const struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(nrf52840_reset), gpios, 0);
-	if (!device_is_ready(reset_gpio.port)){
+	if (!device_is_ready(reset_gpio.port))
+	{
 		LOG_ERR("nRF52840 Reset GPIO not ready");
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&reset_gpio, GPIO_OUTPUT_INACTIVE);
 	gpio_pin_set_dt(&reset_gpio, 1);
-	k_sleep(K_MSEC(10)); 
+	k_sleep(K_MSEC(10));
 	gpio_pin_set_dt(&reset_gpio, 0);
 	k_sleep(K_MSEC(1000)); // Wait for UART on nRF52840 to be ready.
 
@@ -305,9 +311,50 @@ static int init_uart()
 	}
 	uart_rx_enable(mesh_uart, initial_rx_buf, CONFIG_MESH_UART_RX_BUF_SIZE, 1000);
 
-	
-
 	return 0;
+}
+
+/* Module state handlers. */
+
+static void on_state_mesh_ready(struct mesh_msg_data *msg)
+{
+	switch (uart_tx_state)
+	{
+	case STATE_IDLE:
+	{
+		if (is_robot_module_event(&msg->module.robot.header))
+		{
+			LOG_DBG("Robot module event being handled.");
+			switch (msg->module.robot.type)
+			{
+			case ROBOT_EVT_CLEAR_TO_MOVE:
+			{
+				LOG_DBG("Sending \"CLEAR_TO_MOVE\" command.");
+				uart_send_clear_to_move();
+				break;
+			}
+			default:
+				LOG_DBG("Unhandled robot event type: %d", msg->module.robot.type);
+				break;
+			}
+		}
+		break;
+	}
+	case STATE_TRANSMITTING:
+	{
+		// TODO: Handle this in a better way. Mutex, semaphore etc. to wait for transmission to complete? Should probably be paired with a large message queue.
+		LOG_ERR("Dropping message, UART is busy.");
+		break;
+	}
+	default:
+	{
+		LOG_ERR("Unknown uart tx state %d", uart_tx_state);
+	}
+	}
+}
+
+static void on_all_states(struct mesh_msg_data *msg)
+{
 }
 
 static void module_thread_fn(void)
@@ -332,7 +379,10 @@ static void module_thread_fn(void)
 
 		switch (state)
 		{
-
+		case STATE_MESH_READY: {
+			on_state_mesh_ready(&msg);
+			break;
+		}
 		default:
 			break;
 		}

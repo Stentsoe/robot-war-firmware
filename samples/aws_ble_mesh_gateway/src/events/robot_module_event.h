@@ -26,6 +26,7 @@ enum robot_module_event_type {
 	ROBOT_EVT_CLEAR_ALL,
 	ROBOT_EVT_CONFIGURE,
 	ROBOT_EVT_ERROR,
+	ROBOT_EVT_CLEAR_TO_MOVE,
 };
 
 struct robot_led_cfg {
