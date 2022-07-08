@@ -3,12 +3,13 @@
 
 enum peripheral_msg_type
 {
-    HELLO,
-    SET_MOVEMENT_CONFIG,
-    SET_LIGHT_CONFIG,
-    ROBOT_ADDED,
-    CONFIG_ACK,
-    MOVEMENT_REPORTED,
+    HELLO=0x00,
+    SET_MOVEMENT_CONFIG=0x01,
+    SET_LIGHT_CONFIG=0x02,
+    ROBOT_ADDED=0x03,
+    CONFIG_ACK=0x04,
+    MOVEMENT_REPORTED=0x05,
+    CLEAR_TO_MOVE=0x06,
 };
 
 struct mesh_uart_config_ack_data
@@ -58,6 +59,11 @@ struct mesh_uart_movement_reported_msg
     struct mesh_uart_movement_reported_data data;
 }__packed;
 
+struct mesh_uart_clear_to_move_msg
+{
+    struct mesh_uart_msg_header header;
+}__packed;
+
 union mesh_uart_msg
 {
     struct mesh_uart_msg_header header;
@@ -65,4 +71,5 @@ union mesh_uart_msg
     struct mesh_uart_robot_added_msg robot_added;
     struct mesh_uart_config_ack_msg config_ack;
     struct mesh_uart_movement_reported_msg movement_reported;
+    struct mesh_uart_clear_to_move_msg clear_to_move;
 };
