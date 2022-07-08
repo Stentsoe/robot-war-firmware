@@ -40,7 +40,7 @@ struct bt_mesh_robot_config_cli
 int configure_robot_movement(struct bt_mesh_robot_config_cli *config_client, uint16_t address, struct robot_movement_set_msg msg);
 
 /**
- * @brief Clear the next movement for a robot.
+ * @brief Signal a robot that it should start moving.
  *
  * @param config_client The robot configuration client to send from
  * @param address Address of robot to configure.
