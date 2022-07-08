@@ -30,6 +30,10 @@ module = UART_MODULE
 module-str = Uart module
 source "subsys/logging/Kconfig.template.log_config"
 
+module = ROBOT_CONFIG_CLIENT
+module-str = Robot config client
+source "subsys/logging/Kconfig.template.log_config"
+
 endmenu
 
 menu "Zephyr Kernel"

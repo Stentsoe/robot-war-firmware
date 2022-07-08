@@ -4,6 +4,11 @@
 #include "./robot_movement_cli.h"
 #include "../../common/mesh_model_defines/robot_movement_cli.h"
 
+#define MODULE robot_config_client
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(MODULE, CONFIG_ROBOT_CONFIG_CLIENT_LOG_LEVEL);
+
 /* Sent commands */
 
 int configure_robot_movement(struct bt_mesh_robot_config_cli *config_client, uint16_t address, struct robot_movement_set_msg msg)
@@ -13,6 +18,10 @@ int configure_robot_movement(struct bt_mesh_robot_config_cli *config_client, uin
 
 int send_clear_to_move(struct bt_mesh_robot_config_cli *config_client, uint16_t address)
 {
+    if (!bt_mesh_is_provisioned()){
+        LOG_ERR("Device not provisioned");
+        return -EAGAIN;
+    }
     struct bt_mesh_msg_ctx ctx =
     {
         .addr = address,
