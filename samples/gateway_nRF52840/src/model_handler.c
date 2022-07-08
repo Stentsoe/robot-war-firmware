@@ -3,10 +3,9 @@
 
 #include "../../common/mesh_model_defines/robot_movement_cli.h"
 #include "model_handler.h"
+#include "robot_movement_cli.h"
 
 /* SIG models */
-
-static struct bt_mesh_cfg_cli cfg_cli = {};
 
 static void attention_on(struct bt_mesh_model *model)
 {
@@ -31,28 +30,15 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct bt_mesh_model sig_models[] = {
     BT_MESH_MODEL_CFG_SRV,
-    BT_MESH_MODEL_CFG_CLI(&cfg_cli),
     BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
 /* Vendor models */
 
-static int handle_robot_movement_done_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-    return 0;
-}
-
-static const struct bt_mesh_model_op movement_client_ops[] = {
-    {
-        OP_VND_ROBOT_MOVEMENT_DONE_STATUS,
-        sizeof(struct robot_movement_done_status_msg),
-        handle_robot_movement_done_status,
-    },
-    BT_MESH_MODEL_OP_END,
-};
+struct bt_mesh_robot_config_cli robot_conf_cli;
 
 static struct bt_mesh_model vendor_models[] = {
-    BT_MESH_MODEL_VND(CONFIG_BT_COMPANY_ID, ROBOT_MOVEMENT_CLI_MODEL_ID, movement_client_ops, NULL, NULL),
+    BT_MESH_MODEL_VND_ROBOT_CONFIG_CLI(&robot_conf_cli),
 };
 
 /* Composition */
@@ -66,7 +52,9 @@ static struct bt_mesh_comp comp = {
     .elem_count = ARRAY_SIZE(elements),
 };
 
-const struct bt_mesh_comp *model_handler_init()
+const struct bt_mesh_comp *model_handler_init(struct bt_mesh_robot_config_cli **config_client)
 {
+    *config_client = &robot_conf_cli;
+    (*config_client)->model = &vendor_models[0];
     return &comp;
 }

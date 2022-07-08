@@ -18,8 +18,11 @@ LOG_MODULE_REGISTER(MODULE);
 
 #include "uart_handler.h"
 #include "model_handler.h"
+#include "robot_movement_cli.h"
 
 static const struct device *mesh_uart = DEVICE_DT_GET(DT_NODELABEL(uart1));
+
+static struct bt_mesh_robot_config_cli *config_client;
 
 static int setup_mesh()
 {
@@ -31,7 +34,7 @@ static int setup_mesh()
 		return err;
 	}
 	LOG_DBG("Bluetooth initialized");
-	err = bt_mesh_init(bt_mesh_dk_prov_init(), model_handler_init());
+	err = bt_mesh_init(bt_mesh_dk_prov_init(), model_handler_init(&config_client));
 	if (err)
 	{
 		LOG_ERR("Failed to initialize mesh: Error %d", err);
@@ -52,8 +55,8 @@ static int setup_mesh()
 	{
 		LOG_DBG("Device already provisioned");
 		LOG_DBG("Mesh initialized");
-		return 0;
 	}
+
 	return 0;
 }
 

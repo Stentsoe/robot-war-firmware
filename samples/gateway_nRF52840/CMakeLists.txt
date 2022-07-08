@@ -17,6 +17,7 @@ target_sources(app PRIVATE
     src/main.c
     src/model_handler.c
     src/uart_handler.c
+    src/robot_movement_cli.c
 )
 
 include_directories(
