@@ -39,10 +39,7 @@ static enum state_type {
 	STATE_MESH_READY,
 } state;
 
-static enum uart_tx_state_type {
-	STATE_IDLE,
-	STATE_TRANSMITTING,
-} uart_tx_state = STATE_IDLE;
+static K_SEM_DEFINE(uart_transmit_sem, 1, 1);
 
 /* Convenience functions used in internal state handling. */
 static char *state2str(enum state_type state)
@@ -73,18 +70,12 @@ static void state_set(enum state_type new_state)
 	state = new_state;
 }
 
-static void uart_tx_state_set(enum uart_tx_state_type new_state)
-{
-	uart_tx_state = new_state;
-}
 
 /* Mesh module devices and static module data. */
 
 // UART interface to bluetooth mesh MCU
 static const struct device *mesh_uart = DEVICE_DT_GET(DT_ALIAS(uartmesh));
 K_MEM_SLAB_DEFINE_STATIC(mesh_uart_rx_slab, CONFIG_MESH_UART_RX_BUF_SIZE, CONFIG_MESH_UART_RX_BUF_COUNT, 4);
-
-
 
 /* Event handlers */
 static bool app_event_handler(const struct app_event_header *aeh)
@@ -114,11 +105,16 @@ static bool app_event_handler(const struct app_event_header *aeh)
 
 /* UART related functions*/
 
-static int mesh_uart_send(const void *data, size_t len)
-{
-	int err = uart_tx(mesh_uart, data, len, SYS_FOREVER_US);
-	uart_tx_state_set(STATE_TRANSMITTING);
-
+static int mesh_uart_send(const void *data, size_t len, k_timeout_t timeout)
+{	
+	int err = 0;
+	err = k_sem_take(&uart_transmit_sem, timeout);
+	if (err)
+	{
+		LOG_ERR("Could not take semaphore: Reason: %d", err);
+		return err;
+	}
+	err = uart_tx(mesh_uart, data, len, SYS_FOREVER_US);
 	if (err)
 	{
 		LOG_ERR("Failed to start UART tx: %d", err);
@@ -126,24 +122,24 @@ static int mesh_uart_send(const void *data, size_t len)
 	return err;
 }
 
-static int uart_send_hello(void)
+static int uart_send_hello(k_timeout_t timeout)
 {
 	static struct mesh_uart_hello_msg msg = {
 		.header = {
 			.type = HELLO,
 		},
 		.echo = 0x1010};
-	return mesh_uart_send(&msg, sizeof(msg));
+	return mesh_uart_send(&msg, sizeof(msg), timeout);
 }
 
-static int uart_send_clear_to_move(void)
+static int uart_send_clear_to_move(k_timeout_t timeout)
 {
 	static struct mesh_uart_clear_to_move_msg msg = {
 		.header = {
 			.type = CLEAR_TO_MOVE,
 		},
 	};
-	return mesh_uart_send(&msg, sizeof(msg));
+	return mesh_uart_send(&msg, sizeof(msg), timeout);
 }
 
 static int uart_data_rx_rdy_handler(struct uart_event_rx event_data)
@@ -218,13 +214,13 @@ static void uart_callback(const struct device *dev, struct uart_event *event, vo
 	case UART_TX_DONE:
 	{
 		LOG_DBG("UART_TX_DONE: Sent %d bytes", event->data.tx.len);
-		uart_tx_state_set(STATE_IDLE);
+		k_sem_give(&uart_transmit_sem);
 		break;
 	}
 	case UART_TX_ABORTED:
 	{
 		LOG_ERR("UART_TX_ABORTED");
-		uart_tx_state_set(STATE_IDLE);
+		k_sem_give(&uart_transmit_sem);
 		break;
 	}
 	case UART_RX_RDY:
@@ -318,38 +314,22 @@ static int init_uart()
 
 static void on_state_mesh_ready(struct mesh_msg_data *msg)
 {
-	switch (uart_tx_state)
+
+	if (is_robot_module_event(&msg->module.robot.header))
 	{
-	case STATE_IDLE:
-	{
-		if (is_robot_module_event(&msg->module.robot.header))
+		LOG_DBG("Robot module event being handled.");
+		switch (msg->module.robot.type)
 		{
-			LOG_DBG("Robot module event being handled.");
-			switch (msg->module.robot.type)
-			{
-			case ROBOT_EVT_CLEAR_TO_MOVE:
-			{
-				LOG_DBG("Sending \"CLEAR_TO_MOVE\" command.");
-				uart_send_clear_to_move();
-				break;
-			}
-			default:
-				LOG_DBG("Unhandled robot event type: %d", msg->module.robot.type);
-				break;
-			}
+		case ROBOT_EVT_CLEAR_TO_MOVE:
+		{
+			LOG_DBG("Sending \"CLEAR_TO_MOVE\" command.");
+			uart_send_clear_to_move(K_FOREVER);
+			break;
 		}
-		break;
-	}
-	case STATE_TRANSMITTING:
-	{
-		// TODO: Handle this in a better way. Mutex, semaphore etc. to wait for transmission to complete? Should probably be paired with a large message queue.
-		LOG_ERR("Dropping message, UART is busy.");
-		break;
-	}
-	default:
-	{
-		LOG_ERR("Unknown uart tx state %d", uart_tx_state);
-	}
+		default:
+			LOG_DBG("Unhandled robot event type: %d", msg->module.robot.type);
+			break;
+		}
 	}
 }
 
@@ -370,7 +350,7 @@ static void module_thread_fn(void)
 	}
 	LOG_DBG("UART initialized");
 
-	err = uart_send_hello();
+	err = uart_send_hello(K_FOREVER);
 
 	struct mesh_msg_data msg = {0};
 	while (true)
@@ -379,7 +359,8 @@ static void module_thread_fn(void)
 
 		switch (state)
 		{
-		case STATE_MESH_READY: {
+		case STATE_MESH_READY:
+		{
 			on_state_mesh_ready(&msg);
 			break;
 		}
