@@ -18,6 +18,7 @@ struct bt_mesh_robot_config_cli
     struct net_buf_simple pub_msg;
     uint8_t buf[BT_MESH_MODEL_BUF_LEN(OP_VND_ROBOT_CLEAR_TO_MOVE, 0)];
     struct bt_mesh_robot_config_cli_handlers handlers;
+    struct bt_mesh_msg_ack_ctx ack_ctx;
 };
 
 #define BT_MESH_MODEL_VND_ROBOT_CONFIG_CLI(_robot_config_cli)                        \

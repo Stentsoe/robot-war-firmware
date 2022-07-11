@@ -2,6 +2,7 @@
 #include <zephyr/bluetooth/mesh/msg.h>
 
 #include "../../common/mesh_model_defines/robot_movement_srv.h"
+#include "../../common/mesh_model_defines/robot_movement_cli.h"
 #include "model_handler.h"
 
 /* Application handler functions */
@@ -43,11 +44,22 @@ static struct bt_mesh_model sig_models[] = {
 
 static int movement_config_recieved(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
-    struct robot_movement_set_msg *mov_conf = (struct robot_movement_set_msg *)buf->data;
+    struct robot_movement_set_msg mov_conf;
+    mov_conf.time = net_buf_simple_pull_be32(buf);
+    mov_conf.angle = net_buf_simple_pull_be32(buf);
     int err = 0;
     if (app_movement_handler != NULL)
     {
-        app_movement_handler(mov_conf);
+        app_movement_handler(&mov_conf);
+    }
+    // ACK message
+    BT_MESH_MODEL_BUF_DEFINE(msg, OP_VND_ROBOT_MOVEMENT_SET_STATUS, sizeof(struct robot_movement_set_status_msg));
+    bt_mesh_model_msg_init(&msg, OP_VND_ROBOT_MOVEMENT_SET_STATUS);
+    net_buf_simple_add_u8(&msg, 0);
+    err = bt_mesh_model_send(model, ctx, &msg, NULL, NULL);
+    if (err)
+    {
+        printk("Failed to send message ack (err %d)", err);
     }
     return err;
 }

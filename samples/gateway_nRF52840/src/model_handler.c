@@ -56,5 +56,6 @@ const struct bt_mesh_comp *model_handler_init(struct bt_mesh_robot_config_cli **
 {
     *config_client = &robot_conf_cli;
     (*config_client)->model = &vendor_models[0];
+    bt_mesh_msg_ack_ctx_init(&(*config_client)->ack_ctx);
     return &comp;
 }
