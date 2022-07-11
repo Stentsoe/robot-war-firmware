@@ -18,6 +18,7 @@
 #include "app_module_event.h"
 #include "robot_module_event.h"
 #include "cloud_module_event.h"
+#include "mesh_module_event.h"
 #include "ui_module_event.h"
 
 #include <zephyr/logging/log.h>
@@ -52,6 +53,7 @@ struct robot_msg_data {
 		struct ui_module_event ui;
 		struct robot_module_event robot;
 		struct cloud_module_event cloud;
+		struct mesh_module_event mesh;
 	} module;
 };
 
@@ -453,6 +455,13 @@ static bool app_event_handler(const struct app_event_header *aeh)
 		enqueue_msg = true;
 	}
 
+	if (is_mesh_module_event(aeh)) {
+		struct mesh_module_event *evt = cast_mesh_module_event(aeh);
+
+		msg.module.mesh = *evt;
+		enqueue_msg = true;
+	}
+
 	if (enqueue_msg) {
 		int err = module_enqueue_msg(&self, &msg);
 
@@ -662,3 +671,4 @@ APP_EVENT_SUBSCRIBE(MODULE, app_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, robot_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, cloud_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, ui_module_event);
+APP_EVENT_SUBSCRIBE(MODULE, mesh_module_event);
