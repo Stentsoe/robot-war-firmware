@@ -30,12 +30,6 @@ static enum state_type {
 	STATE_CLOUD_CONNECTED,
 } state;
 
-/* Robot module super states. */
-static enum state_sub_type {
-	STATE_CONFIGURING,
-	STATE_EXECUTING,
-} sub_state;
-
 enum robot_state {
 	ROBOT_STATE_WAIT,
 	ROBOT_STATE_CONFIGURING,
@@ -78,10 +72,10 @@ static struct module_data self = {
 static char *state2str(enum state_type state)
 {
 	switch (state) {
-	case STATE_CONFIGURING:
-		return "STATE_CONFIGURING";
-	case STATE_EXECUTING:
-		return "STATE_EXECUTING";
+	case STATE_CLOUD_DISCONNECTED:
+		return "STATE_CLOUD_DISCONNECTED";
+	case STATE_CLOUD_CONNECTED:
+		return "STATE_CLOUD_CONNECTED";
 	default:
 		return "Unknown state";
 	}
