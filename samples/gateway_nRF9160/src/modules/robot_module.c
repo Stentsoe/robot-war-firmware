@@ -310,12 +310,12 @@ static char* json_encode_robot_config_report(int addr)
 		}
 	}
 
-	if (!cJSON_AddNumberToObject(robot_obj, "drivetime_ms", robot->cfg.drive_time)) {
+	if (!cJSON_AddNumberToObject(robot_obj, "driveTimeMs", robot->cfg.drive_time)) {
 		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
 		return NULL;
 	}
 
-	if (!cJSON_AddNumberToObject(robot_obj, "rotation_degrees", robot->cfg.rotation)) {
+	if (!cJSON_AddNumberToObject(robot_obj, "angleDeg", robot->cfg.rotation)) {
 		LOG_ERR("unable to report rotation config on robot addr %d", addr);
 		return NULL;
 	}
@@ -367,12 +367,12 @@ static int json_get_delta_robot_config(cJSON *root_obj)
 			continue;
 		}
 
-		value_obj = json_object_decode(robot_obj, "drivetime_ms");
+		value_obj = json_object_decode(robot_obj, "driveTimeMs");
 		if(value_obj != NULL) {
 			robot->cfg.drive_time = value_obj->valueint;
 		}
 
-		value_obj = json_object_decode(robot_obj, "rotation_degrees");
+		value_obj = json_object_decode(robot_obj, "angleDeg");
 		if(value_obj != NULL) {
 			robot->cfg.rotation = value_obj->valueint;
 		}
