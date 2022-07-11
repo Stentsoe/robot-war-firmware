@@ -25,4 +25,4 @@ manifest:
 
 # West-related configuration for the nrf_midi_priv repository.
   self:
-    path: nrf_self_balancing_robot
+    path: nrf_robot_wars

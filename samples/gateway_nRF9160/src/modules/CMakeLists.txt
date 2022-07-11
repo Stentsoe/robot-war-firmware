@@ -11,4 +11,5 @@ target_sources(app PRIVATE
 	modules_common.c
 	cloud_module.c
 	robot_module.c
+	mesh_module.c
 )
