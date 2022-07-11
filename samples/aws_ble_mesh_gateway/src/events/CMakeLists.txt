@@ -10,4 +10,5 @@ target_sources(app PRIVATE
 	modem_module_event.c
 	cloud_module_event.c
 	robot_module_event.c
+	mesh_module_event.c
 )

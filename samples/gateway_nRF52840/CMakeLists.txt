@@ -16,14 +16,12 @@ zephyr_library_include_directories(src/events)
 target_sources(app PRIVATE 
     src/main.c
     src/model_handler.c
+    src/uart_handler.c
+    src/robot_movement_cli.c
 )
 
 include_directories(
     src
     ../common/mesh_model_defines
 )
-
-add_subdirectory(src/modules)
-add_subdirectory(src/events)
-add_subdirectory(drivers)
 # NORDIC SDK APP END
