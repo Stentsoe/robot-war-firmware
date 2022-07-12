@@ -344,6 +344,37 @@ static char* json_encode_robot_config_report(int addr)
 	return msg;
 }
 
+static char* json_encode_robot_revolution_count(int addr, int32_t revolutions)
+{
+	char *msg;
+	char robot_id[8];
+	cJSON *root_obj;
+
+	cJSON *robots_obj = cJSON_CreateObject();
+	if (robots_obj == NULL) {
+		return NULL;
+	}
+
+	cJSON *robot_obj = cJSON_CreateObject();
+	if (robots_obj == NULL) {
+		return NULL;
+	} 
+
+	sprintf(robot_id, "%d", addr);
+	cJSON_AddItemToObject(robots_obj, robot_id, robot_obj);
+
+	if (!cJSON_AddNumberToObject(robot_obj, "revolutionCount", revolutions)) {
+		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
+		return NULL;
+	}
+
+	root_obj = json_create_reported_object(robots_obj, "robots");
+
+	msg = cJSON_PrintUnformatted(root_obj);
+	cJSON_Delete(root_obj);
+	return msg;
+}
+
 static int json_get_delta_robot_config(cJSON *root_obj)
 {
 	char robot_addr[8];
@@ -415,10 +446,7 @@ static int json_get_delta_robot_config(cJSON *root_obj)
 		APP_EVENT_SUBMIT(event);
 	}
 
-	// TODO: Ensure that this is the correct place to submit this event
-	struct robot_module_event *clear_to_move_event = new_robot_module_event();
-	clear_to_move_event->type = ROBOT_EVT_CLEAR_TO_MOVE;
-	APP_EVENT_SUBMIT(clear_to_move_event);
+
 	return 0;
 }
 
@@ -513,6 +541,47 @@ static void report_robot_config(int addr)
 	APP_EVENT_SUBMIT(event);
 }
 
+static void report_revolution_count(uint64_t addr, int32_t revolutions) {
+	struct robot_module_event *event = new_robot_module_event();
+	event->type = ROBOT_EVT_REPORT;
+	event->data.str = json_encode_robot_revolution_count(addr, revolutions);
+	APP_EVENT_SUBMIT(event);
+}
+
+static void set_state_ready(uint64_t addr) 
+{
+	struct robot *robot;
+	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
+		if (robot->addr == addr) {
+			robot->state = ROBOT_STATE_WAIT;
+			break;
+		}
+	}
+
+
+}
+
+static void set_state_configured(uint64_t addr) 
+{
+	struct robot *robot;
+	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
+		if (robot->addr == addr) {
+			robot->state = ROBOT_STATE_CONFIGURED;
+			break;
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
+		if (robot->state != ROBOT_STATE_CONFIGURED) {
+			return;
+		}
+	}
+
+	struct robot_module_event *clear_to_move_event = new_robot_module_event();
+	clear_to_move_event->type = ROBOT_EVT_CLEAR_TO_MOVE;
+	APP_EVENT_SUBMIT(clear_to_move_event);
+}
+
 /* Internal robot list functions */
 static void add_robot(int addr) 
 {
@@ -548,6 +617,8 @@ static void clear_robot_list(void) {
 static void on_state_cloud_disconnected(struct robot_msg_data *msg)
 {
 
+	if (IS_EVENT(msg, mesh, MESH_EVT_ROBOT_ADDED)) {
+		add_robot(msg->module.mesh.data.new_robot.addr);
 	}
 
 	if (IS_EVENT(msg, cloud, CLOUD_EVT_CONNECTED)) {
@@ -578,8 +649,23 @@ static void on_state_cloud_connected(struct robot_msg_data *msg)
 	}
 
 	if (IS_EVENT(msg, cloud, CLOUD_EVT_DISCONNECTED)) {
-		report_robot_list();
 		state_set(STATE_CLOUD_DISCONNECTED);
+	}
+
+	if (IS_EVENT(msg, mesh, MESH_EVT_ROBOT_ADDED)) {
+		add_robot(msg->module.mesh.data.new_robot.addr);
+		report_add_robot(msg->module.mesh.data.new_robot.addr);
+	}
+
+	if (IS_EVENT(msg, mesh, MESH_EVT_CONFIG_ACK)) {
+		report_robot_config(5);
+		set_state_configured(5);
+	}
+
+	if (IS_EVENT(msg, mesh, MESH_EVT_MOVEMENT_REPORTED)) {
+		report_revolution_count(5, 6);
+		
+		set_state_ready(5);
 	}
 }
 
