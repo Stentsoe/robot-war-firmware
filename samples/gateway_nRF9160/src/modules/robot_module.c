@@ -730,9 +730,9 @@ static void on_state_cloud_connected(struct robot_msg_data *msg)
 		report_add_robot(msg->module.mesh.data.new_robot.addr);
 	}
 
-	if (IS_EVENT(msg, mesh, MESH_EVT_CONFIG_ACK)) {
-		report_robot_movement_config(msg->module.mesh.data.config_ack.addr); 
-		set_state_configured(msg->module.mesh.data.config_ack.addr); 
+	if (IS_EVENT(msg, mesh, MESH_EVT_MOVEMENT_CONFIG_ACCEPTED)) {
+		report_robot_movement_config(msg->module.mesh.data.movement_config.addr); 
+		set_state_configured(msg->module.mesh.data.movement_config.addr); 
 	}
 
 	if (IS_EVENT(msg, mesh, MESH_EVT_MOVEMENT_REPORTED)) {

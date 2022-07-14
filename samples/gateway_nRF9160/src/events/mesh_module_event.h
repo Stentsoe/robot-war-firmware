@@ -27,15 +27,17 @@ enum mesh_module_event_type {
 	MESH_EVT_ROBOT_ADDED, // Robot added to network.
     MESH_EVT_OP_STATUS, // Status of previous operation.
     MESH_EVT_MOVEMENT_REPORTED, // Movement reported by robot.
+    MESH_EVT_MOVEMENT_CONFIG_ACCEPTED, // Movement configuration accepted by robot.
 };
 
 struct mesh_module_event {
     struct app_event_header header;
     enum mesh_module_event_type type;
     union {
-        int status;
-        struct mesh_uart_robot_added_data new_robot;
-        struct mesh_uart_movement_reported_data movement_reported;
+        int status; // MESH_EVT_OP_STATUS: Status for previous operation.
+        struct mesh_uart_robot_added_data new_robot; // MESH_EVT_ROBOT_ADDED: Data about new robot.
+        struct mesh_uart_movement_reported_data movement_reported; // MESH_EVT_MOVEMENT_REPORTED: Data about actual movement reported by robot.
+        struct mesh_uart_set_movement_config_data movement_config; // MESH_EVT_MOVEMENT_CONFIG_ACCEPTED: Movement configuration accepted by robot.
     } data;
 };
 
