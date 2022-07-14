@@ -14,7 +14,7 @@ enum peripheral_msg_type
 
 struct mesh_uart_config_ack_data
 {
-    int32_t seq_num;
+    uint64_t addr;
 }__packed;
 
 struct mesh_uart_robot_added_data

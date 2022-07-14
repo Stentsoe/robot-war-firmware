@@ -39,7 +39,7 @@ enum robot_state {
 
 struct robot {
 	sys_snode_t node;
-	int addr;
+	uint64_t addr;
 	enum robot_state state;
 	struct robot_cfg cfg;
 };
@@ -198,25 +198,27 @@ static cJSON *json_get_object_in_state(cJSON *root_obj, char *str)
 	return desired_obj;
 }
 
-static char* json_encode_add_robot_report(int id)
+static char* json_encode_add_robot_report(uint64_t addr)
 {
 	char *msg;
-	char robot_id[8];
+	char robot_addr[13];
 	cJSON *root_obj;
 
 	cJSON *robots_obj = cJSON_CreateObject();
 	if (robots_obj == NULL) {
 		return NULL;
 	} 
-
+	
 	cJSON *robot_obj = cJSON_CreateObject();
 	if (robot_obj == NULL) {
 		cJSON_Delete(robots_obj);
 		return NULL;
 	} 
 
-	sprintf(robot_id, "%d", id);
-	cJSON_AddItemToObject(robots_obj, robot_id, robot_obj);
+	sprintf(robot_addr, "%x", (uint32_t) ((addr >> 32) & 0xffffffff));
+	sprintf(&robot_addr[4], "%x", (uint32_t) (addr & 0xffffffff));
+
+	cJSON_AddItemToObject(robots_obj, robot_addr, robot_obj);
 	
 	root_obj = json_create_reported_object(robots_obj, "robots");
 
@@ -225,10 +227,10 @@ static char* json_encode_add_robot_report(int id)
 	return msg;
 }
 
-static char* json_encode_remove_robot_report(int id) 
+static char* json_encode_remove_robot_report(uint64_t addr) 
 {
 	char *msg;
-	char robot_id[8];
+	char robot_addr[13];
 	cJSON *root_obj;
 
 	cJSON *robots_obj = cJSON_CreateObject();
@@ -241,8 +243,9 @@ static char* json_encode_remove_robot_report(int id)
 		return NULL;
 	}  
 	
-	sprintf(robot_id, "%d", id);
-	cJSON_AddItemToObject(robots_obj, robot_id, robot_obj);
+	sprintf(robot_addr, "%x", (uint32_t) ((addr >> 32) & 0xffffffff));
+	sprintf(&robot_addr[4], "%x", (uint32_t) (addr & 0xffffffff));
+	cJSON_AddItemToObject(robots_obj, robot_addr, robot_obj);
 	
 	
 	root_obj = json_create_reported_object(robots_obj, "robots");
@@ -255,7 +258,7 @@ static char* json_encode_remove_robot_report(int id)
 static char* json_encode_robot_list_report(void)
 {
 	char *msg;
-	char robot_id[8];
+	char robot_addr[13];
 	cJSON *root_obj;
 	cJSON *robot_obj;
 
@@ -273,8 +276,9 @@ static char* json_encode_robot_list_report(void)
 			return NULL;
 		} 
 
-		sprintf(robot_id, "%d", robot->addr);
-		cJSON_AddItemToObject(robots_obj, robot_id, robot_obj);
+		sprintf(robot_addr, "%x", (uint32_t) ((robot->addr >> 32) & 0xffffffff));
+		sprintf(&robot_addr[4], "%x", (uint32_t) (robot->addr & 0xffffffff));
+		cJSON_AddItemToObject(robots_obj, robot_addr, robot_obj);
 	}
 
 	root_obj = json_create_reported_object(robots_obj, "robots");
@@ -284,10 +288,10 @@ static char* json_encode_robot_list_report(void)
 	return msg;
 }
 
-static char* json_encode_robot_movement_config_report(int addr)
+static char* json_encode_robot_movement_config_report(uint64_t addr)
 {
 	char *msg;
-	char robot_id[8];
+	char robot_addr[13];
 	cJSON *root_obj;
 
 	cJSON *robots_obj = cJSON_CreateObject();
@@ -300,8 +304,9 @@ static char* json_encode_robot_movement_config_report(int addr)
 		return NULL;
 	} 
 
-	sprintf(robot_id, "%d", addr);
-	cJSON_AddItemToObject(robots_obj, robot_id, robot_obj);
+	sprintf(robot_addr, "%x", (uint32_t) ((addr >> 32) & 0xffffffff));
+	sprintf(&robot_addr[4], "%x", (uint32_t) (addr & 0xffffffff));
+	cJSON_AddItemToObject(robots_obj, robot_addr, robot_obj);
 
 	struct robot *robot;
 	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
@@ -311,17 +316,17 @@ static char* json_encode_robot_movement_config_report(int addr)
 	}
 
 	if (!cJSON_AddNumberToObject(robot_obj, "driveTimeMs", robot->cfg.drive_time)) {
-		LOG_ERR("unable to report drivetime config on robot addr %d", addr);
+		LOG_ERR("unable to report drivetime config on robot addr %lld", addr);
 		return NULL;
 	}
 
 	if (!cJSON_AddNumberToObject(robot_obj, "angleDeg", robot->cfg.rotation)) {
-		LOG_ERR("unable to report rotation config on robot addr %d", addr);
+		LOG_ERR("unable to report rotation config on robot addr %lld", addr);
 		return NULL;
 	}
 
 	if (!cJSON_AddNumberToObject(robot_obj, "speedPct", robot->cfg.speed)) {
-		LOG_ERR("unable to report speed config on robot addr %d", addr);
+		LOG_ERR("unable to report speed config on robot addr %lld", addr);
 		return NULL;
 	}
 
@@ -332,10 +337,10 @@ static char* json_encode_robot_movement_config_report(int addr)
 	return msg;
 }
 
-static char* json_encode_robot_led_config_report(int addr)
+static char* json_encode_robot_led_config_report(uint64_t addr)
 {
 	char *msg;
-	char robot_id[8];
+	char robot_addr[13];
 	cJSON *root_obj;
 	int led[4];
 
@@ -349,8 +354,9 @@ static char* json_encode_robot_led_config_report(int addr)
 		return NULL;
 	} 
 
-	sprintf(robot_id, "%d", addr);
-	cJSON_AddItemToObject(robots_obj, robot_id, robot_obj);
+	sprintf(robot_addr, "%x", (uint32_t) ((addr >> 32) & 0xffffffff));
+	sprintf(&robot_addr[4], "%x", (uint32_t) (addr & 0xffffffff));
+	cJSON_AddItemToObject(robots_obj, robot_addr, robot_obj);
 
 	struct robot *robot;
 	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
@@ -366,7 +372,7 @@ static char* json_encode_robot_led_config_report(int addr)
 
 	cJSON *led_obj = cJSON_CreateIntArray(led, 4);
 	if (!cJSON_AddItemToObject(robot_obj, "led", led_obj)) {
-		LOG_ERR("unable to report led config on robot addr %d", addr);
+		LOG_ERR("unable to report led config on robot addr %lld", addr);
 		return NULL;
 	};
 
@@ -380,7 +386,7 @@ static char* json_encode_robot_led_config_report(int addr)
 static char* json_encode_robot_revolution_count_list(void)
 {
 	char *msg;
-	char robot_id[8];
+	char robot_addr[13];
 	cJSON *root_obj;
 
 	cJSON *robots_obj = cJSON_CreateObject();
@@ -395,11 +401,12 @@ static char* json_encode_robot_revolution_count_list(void)
 			return NULL;
 		} 
 
-		sprintf(robot_id, "%d", robot->addr);
-		cJSON_AddItemToObject(robots_obj, robot_id, robot_obj);
+		sprintf(robot_addr, "%x", (uint32_t) ((robot->addr >> 32) & 0xffffffff));
+		sprintf(&robot_addr[4], "%x", (uint32_t) (robot->addr & 0xffffffff));
+		cJSON_AddItemToObject(robots_obj, robot_addr, robot_obj);
 
 		if (!cJSON_AddNumberToObject(robot_obj, "revolutionCount", robot->cfg.revolutions)) {
-			LOG_ERR("unable to report revolution count on robot addr %d", robot->addr);
+			LOG_ERR("unable to report revolution count on robot addr %lld", robot->addr);
 			return NULL;
 		}
 	}
@@ -413,7 +420,7 @@ static char* json_encode_robot_revolution_count_list(void)
 
 static int json_get_delta_robot_config(cJSON *root_obj)
 {
-	char robot_addr[8];
+	char robot_addr[13];
 	bool movement_config = false;
 
 	cJSON *robots_obj = NULL;
@@ -430,7 +437,8 @@ static int json_get_delta_robot_config(cJSON *root_obj)
 
 	struct robot *robot;
 	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
-		sprintf(robot_addr, "%d", robot->addr);
+		sprintf(robot_addr, "%x", (uint32_t) ((robot->addr >> 32) & 0xffffffff));
+		sprintf(&robot_addr[4], "%x", (uint32_t) (robot->addr & 0xffffffff));
 		robot_obj = cJSON_GetObjectItem(robots_obj, robot_addr);
 		if (robots_obj == NULL) {
 			continue;
@@ -563,7 +571,7 @@ static void report_clear_robot_list(void)
 	APP_EVENT_SUBMIT(event);
 }
 
-static void report_add_robot(int addr) 
+static void report_add_robot(uint64_t addr) 
 {	
 	struct robot_module_event *event = new_robot_module_event();
 	event->type = ROBOT_EVT_REPORT;
@@ -571,7 +579,7 @@ static void report_add_robot(int addr)
 	APP_EVENT_SUBMIT(event);
 }
 
-static void report_remove_robot(int addr) 
+static void report_remove_robot(uint64_t addr) 
 {	
 	struct robot_module_event *event = new_robot_module_event();
 	event->type = ROBOT_EVT_REPORT;
@@ -579,7 +587,7 @@ static void report_remove_robot(int addr)
 	APP_EVENT_SUBMIT(event);
 }
 
-static void report_robot_movement_config(int addr) 
+static void report_robot_movement_config(uint64_t addr) 
 {	
 	struct robot_module_event *event = new_robot_module_event();
 	event->type = ROBOT_EVT_REPORT;
@@ -587,7 +595,7 @@ static void report_robot_movement_config(int addr)
 	APP_EVENT_SUBMIT(event);
 }
 
-static void report_robot_led_config(int addr) 
+static void report_robot_led_config(uint64_t addr) 
 {	
 	struct robot_module_event *event = new_robot_module_event();
 	event->type = ROBOT_EVT_REPORT;
@@ -644,14 +652,14 @@ static void set_state_configured(uint64_t addr)
 }
 
 /* Internal robot list functions */
-static void add_robot(int addr) 
+static void add_robot(uint64_t addr) 
 {
 	struct robot *robot = k_malloc(sizeof(struct robot));
 	robot->addr = addr;
 	sys_slist_append(&robot_list, &robot->node);
 }
 
-static void remove_robot(int addr) 
+static void remove_robot(uint64_t addr) 
 {
 	struct robot *robot;
 	SYS_SLIST_FOR_EACH_CONTAINER(&robot_list, robot, node) {
@@ -719,14 +727,13 @@ static void on_state_cloud_connected(struct robot_msg_data *msg)
 	}
 
 	if (IS_EVENT(msg, mesh, MESH_EVT_CONFIG_ACK)) {
-		report_robot_movement_config(5); // NOTE: Dummy addr value
-		set_state_configured(5); // NOTE: Dummy addr value
+		report_robot_movement_config(msg->module.mesh.data.config_ack.addr); // NOTE: Dummy addr value
+		set_state_configured(msg->module.mesh.data.config_ack.addr); // NOTE: Dummy addr value
 	}
 
 	if (IS_EVENT(msg, mesh, MESH_EVT_MOVEMENT_REPORTED)) {
-		set_revolution_count(5, 6); // NOTE: Dummy addr and revolutions value
+		set_revolution_count(msg->module.mesh.data.movement_reported.addr, 6); // NOTE: Dummy addr and revolutions value
 	}
-
 }
 
 /* Message handler for all states. */
