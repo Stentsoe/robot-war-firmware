@@ -22,6 +22,14 @@ config MESH_UART_RX_BUF_COUNT
 	int "UART RX buffer count"
 	default 4
 
+config UART_THREAD_STACK_SIZE
+	int "UART thread stack size"
+	default 2048
+
+config UART_THREAD_PRIORITY
+	int "UART thread priority"
+	default 5
+
 module = APPLICATION_MODULE
 module-str = Application module
 source "subsys/logging/Kconfig.template.log_config"
