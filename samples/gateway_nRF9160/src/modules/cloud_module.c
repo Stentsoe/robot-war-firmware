@@ -22,10 +22,10 @@
 #define CLOUD_MODULE_LOG_LEVEL 4
 LOG_MODULE_REGISTER(MODULE, CLOUD_MODULE_LOG_LEVEL);
 
-#define TOPIC_UPDATE_DELTA "$aws/things/robot_wars_gateway/shadow/update/delta"
-#define TOPIC_GET_ACCEPTED "$aws/things/robot_wars_gateway/shadow/get/accepted"
-#define TOPIC_UPDATE_ACCEPTED "$aws/things/robot_wars_gateway/shadow/update/accepted"
-#define TOPIC_UPDATE_REJECTED "$aws/things/robot_wars_gateway/shadow/update/rejected"
+#define TOPIC_UPDATE_DELTA "$aws/things/" CONFIG_AWS_IOT_CLIENT_ID_STATIC "/shadow/update/delta"
+#define TOPIC_GET_ACCEPTED "$aws/things/" CONFIG_AWS_IOT_CLIENT_ID_STATIC "/shadow/get/accepted"
+#define TOPIC_UPDATE_ACCEPTED "$aws/things/" CONFIG_AWS_IOT_CLIENT_ID_STATIC "/shadow/update/accepted"
+#define TOPIC_UPDATE_REJECTED "$aws/things/" CONFIG_AWS_IOT_CLIENT_ID_STATIC "/shadow/update/rejected"
 
 QOS_MESSAGE_TYPES_REGISTER(CLOUD_SHADOW_UPDATE);
 QOS_MESSAGE_TYPES_REGISTER(CLOUD_SHADOW_CLEAR);
