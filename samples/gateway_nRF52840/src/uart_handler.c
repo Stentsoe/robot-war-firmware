@@ -129,6 +129,14 @@ static int mesh_uart_send_hello(const struct device *dev, uint16_t echo, k_timeo
 	return mesh_uart_send(dev, &msg, sizeof(msg), timeout);
 }
 
+static int mesh_uart_send_movement_config_accepted(const struct device *dev, struct mesh_uart_movement_config config, k_timeout_t timeout)
+{
+	static struct mesh_uart_movement_config_accepted_msg msg;
+	msg.header.type = MOVEMENT_CONFIG_ACCEPTED;
+	msg.data = config;
+	return mesh_uart_send(dev, &msg, sizeof(msg), timeout);
+}
+
 static void uart_callback(const struct device *dev, struct uart_event *event, void *user_data)
 {
 	struct bt_mesh_robot_config_cli *config_client = (struct bt_mesh_robot_config_cli *)user_data;
@@ -221,12 +229,6 @@ int init_uart(const struct device *uart_dev, struct bt_mesh_robot_config_cli *co
 	return 0;
 }
 
-static int uart_send_generic_ack(const struct device *uart_dev, int status, int32_t timeout)
-{
-	static struct mesh_uart_status_data msg;
-	return uart_tx(uart_dev, &msg, sizeof(msg), timeout);
-}
-
 static void uart_thread_fn(void *arg1, void *arg2, void *arg3)
 {
 	LOG_DBG("Starting UART thread");
@@ -264,6 +266,12 @@ static void uart_thread_fn(void *arg1, void *arg2, void *arg3)
 			if (err)
 			{
 				LOG_ERR("Failed to set robot movement configuration: Error %d", err);
+			} else {
+				struct mesh_uart_movement_config accepted_config;
+				accepted_config.addr = thread_msg.msg.set_movement_config.data.addr;
+				accepted_config.time = movement_config.time;
+				accepted_config.angle = movement_config.angle;
+				mesh_uart_send_movement_config_accepted(thread_msg.uart_dev, accepted_config, K_FOREVER);
 			}
 			mesh_uart_send_status(thread_msg.uart_dev, err, K_FOREVER);
 			break;

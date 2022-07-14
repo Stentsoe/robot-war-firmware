@@ -209,6 +209,17 @@ static int uart_data_rx_rdy_handler(struct uart_event_rx event_data)
 		LOG_DBG("UART \"MOVEMENT_REPORTED\" received");
 		break;
 	}
+	case MOVEMENT_CONFIG_ACCEPTED: {
+		if (current_msg_len < sizeof(msg.movement_config_accepted))
+		{
+			return 0; // Message not complete. Keep waiting for more data.
+		}
+		struct mesh_module_event *evt = new_mesh_module_event();
+		evt->type = MESH_EVT_MOVEMENT_CONFIG_ACCEPTED;
+		evt->data.movement_config = msg.movement_config_accepted.data;
+		APP_EVENT_SUBMIT(evt);
+		break;
+	}
 	default:
 	{
 		LOG_ERR("Unknown message type %d", msg.header.type);
@@ -338,7 +349,7 @@ static void on_state_mesh_ready(struct mesh_msg_data *msg)
 			uart_send_clear_to_move(K_FOREVER);
 			break;
 		}
-		case ROBOT_EVT_CONFIGURE: {
+		case ROBOT_EVT_MOVEMENT_CONFIGURE: {
 			LOG_DBG("Configuring robot");
 			uint16_t addr = msg->module.robot.data.robot.addr;
 			uint32_t time = msg->module.robot.data.robot.cfg->drive_time;

@@ -10,6 +10,7 @@ enum mesh_uart_msg_type
     STATUS=0x04, // Status of previous command.
     MOVEMENT_REPORTED=0x05, // Movement report from robot.
     CLEAR_TO_MOVE=0x06, // Robots ready to move.
+    MOVEMENT_CONFIG_ACCEPTED=0x07, // Movement configuration accepted by robot.
 };
 
 struct mesh_uart_status_data
@@ -32,7 +33,7 @@ struct mesh_uart_movement_reported_data
     int32_t yaw;
 }__packed;
 
-struct mesh_uart_set_movement_config_data
+struct mesh_uart_movement_config
 {
     uint16_t addr;
     uint32_t time;
@@ -71,7 +72,13 @@ struct mesh_uart_movement_reported_msg
 struct mesh_uart_set_movement_config_msg
 {
     struct mesh_uart_msg_header header;
-    struct mesh_uart_set_movement_config_data data;
+    struct mesh_uart_movement_config data;
+}__packed;
+
+struct mesh_uart_movement_config_accepted_msg
+{
+    struct mesh_uart_msg_header header;
+    struct mesh_uart_movement_config data;
 }__packed;
 
 struct mesh_uart_clear_to_move_msg
@@ -88,4 +95,5 @@ union mesh_uart_msg
     struct mesh_uart_movement_reported_msg movement_reported;
     struct mesh_uart_set_movement_config_msg set_movement_config;
     struct mesh_uart_clear_to_move_msg clear_to_move;
+    struct mesh_uart_movement_config_accepted_msg movement_config_accepted;
 };
