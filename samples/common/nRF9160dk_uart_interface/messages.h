@@ -19,6 +19,7 @@ struct mesh_uart_status_data
 
 struct mesh_uart_robot_added_data
 {
+    uint64_t addr; // Temporary dummy address. Should be removed once we have decided on an addressing scheme.
     uint8_t mac_address[6]; // 48 bit MAC address.
     uint16_t mesh_address; // 16 bit address on the mesh network.
 }__packed;
