@@ -731,12 +731,12 @@ static void on_state_cloud_connected(struct robot_msg_data *msg)
 	}
 
 	if (IS_EVENT(msg, mesh, MESH_EVT_CONFIG_ACK)) {
-		report_robot_movement_config(msg->module.mesh.data.config_ack.addr); // NOTE: Dummy addr value
-		set_state_configured(msg->module.mesh.data.config_ack.addr); // NOTE: Dummy addr value
+		report_robot_movement_config(msg->module.mesh.data.config_ack.addr); 
+		set_state_configured(msg->module.mesh.data.config_ack.addr); 
 	}
 
 	if (IS_EVENT(msg, mesh, MESH_EVT_MOVEMENT_REPORTED)) {
-		set_revolution_count(msg->module.mesh.data.movement_reported.addr, 6); // NOTE: Dummy addr and revolutions value
+		set_revolution_count(msg->module.mesh.data.movement_reported.addr, msg->module.mesh.data.movement_reported.yaw); 
 	}
 }
 
