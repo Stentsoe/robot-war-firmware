@@ -23,10 +23,10 @@ extern "C" {
 
 
 enum mesh_module_event_type {
-    MESH_EVT_READY,
-	MESH_EVT_ROBOT_ADDED,
+    MESH_EVT_READY, // Mesh module is ready to use.
+	MESH_EVT_ROBOT_ADDED, // Robot added to network.
     MESH_EVT_OP_STATUS, // Status of previous operation.
-    MESH_EVT_MOVEMENT_REPORTED,
+    MESH_EVT_MOVEMENT_REPORTED, // Movement reported by robot.
 };
 
 struct mesh_module_event {
