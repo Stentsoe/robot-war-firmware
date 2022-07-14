@@ -106,7 +106,7 @@ static bool app_event_handler(const struct app_event_header *aeh)
 /* UART related functions*/
 
 static int mesh_uart_send(const void *data, size_t len, k_timeout_t timeout)
-{	
+{
 	int err = 0;
 	err = k_sem_take(&uart_transmit_sem, timeout);
 	if (err)
@@ -139,6 +139,16 @@ static int uart_send_clear_to_move(k_timeout_t timeout)
 			.type = CLEAR_TO_MOVE,
 		},
 	};
+	return mesh_uart_send(&msg, sizeof(msg), timeout);
+}
+
+static int uart_send_movement_config(uint16_t address, uint32_t time, int32_t angle, k_timeout_t timeout)
+{
+	static struct mesh_uart_set_movement_config_msg msg;
+	msg.header.type = SET_MOVEMENT_CONFIG;
+	msg.data.addr = address;
+	msg.data.time = time;
+	msg.data.angle = angle;
 	return mesh_uart_send(&msg, sizeof(msg), timeout);
 }
 
@@ -326,6 +336,14 @@ static void on_state_mesh_ready(struct mesh_msg_data *msg)
 		{
 			LOG_DBG("Sending \"CLEAR_TO_MOVE\" command.");
 			uart_send_clear_to_move(K_FOREVER);
+			break;
+		}
+		case ROBOT_EVT_CONFIGURE: {
+			LOG_DBG("Configuring robot");
+			uint16_t addr = msg->module.robot.data.robot.addr;
+			uint32_t time = msg->module.robot.data.robot.cfg->drive_time;
+			int32_t angle = msg->module.robot.data.robot.cfg->rotation;
+			uart_send_movement_config(addr, time, angle, K_FOREVER);
 			break;
 		}
 		default:
