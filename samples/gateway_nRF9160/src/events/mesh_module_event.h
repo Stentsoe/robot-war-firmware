@@ -25,7 +25,7 @@ extern "C" {
 enum mesh_module_event_type {
     MESH_EVT_READY,
 	MESH_EVT_ROBOT_ADDED,
-    MESH_EVT_CONFIG_ACK,
+    MESH_EVT_OP_STATUS, // Status of previous operation.
     MESH_EVT_MOVEMENT_REPORTED,
 };
 
@@ -33,7 +33,7 @@ struct mesh_module_event {
     struct app_event_header header;
     enum mesh_module_event_type type;
     union {
-        struct mesh_uart_config_ack_data config_ack;
+        int status;
         struct mesh_uart_robot_added_data new_robot;
         struct mesh_uart_movement_reported_data movement_reported;
     } data;

@@ -145,12 +145,14 @@ static int uart_send_clear_to_move(k_timeout_t timeout)
 static int uart_data_rx_rdy_handler(struct uart_event_rx event_data)
 {
 	static union mesh_uart_msg msg;
+	static size_t current_msg_len = 0; // Length of currently received fragment
 
-	uint8_t *msg_fill_start = ((uint8_t *)&msg) + event_data.offset;
-	memcpy(msg_fill_start, event_data.buf, event_data.len);
+	uint8_t *msg_fill_start = ((uint8_t *)&msg) + current_msg_len;
+	memcpy(msg_fill_start, (event_data.buf + event_data.offset), event_data.len);
+	current_msg_len += event_data.len;
 
-	size_t msg_received_len = event_data.offset + event_data.len;
-	if (msg_received_len < sizeof(msg.header))
+	LOG_DBG("Message fragment received: length: %d offset: %d", event_data.len, event_data.offset);
+	if (current_msg_len < sizeof(msg.header))
 	{
 		return 0; // Header not yet received. Keep waiting for more data.
 	}
@@ -159,7 +161,7 @@ static int uart_data_rx_rdy_handler(struct uart_event_rx event_data)
 	{
 	case HELLO:
 	{
-		if (msg_received_len < sizeof(msg.hello))
+		if (current_msg_len < sizeof(msg.hello))
 		{
 			return 0; // Message not complete. Keep waiting for more data.
 		}
@@ -172,25 +174,25 @@ static int uart_data_rx_rdy_handler(struct uart_event_rx event_data)
 	}
 	case ROBOT_ADDED:
 	{
-		if (msg_received_len < sizeof(msg.robot_added))
+		if (current_msg_len < sizeof(msg.robot_added))
 		{
 			return 0; // Message not complete. Keep waiting for more data.
 		}
 		LOG_DBG("UART \"ROBOT_ADDED\" received");
 		break;
 	}
-	case CONFIG_ACK:
+	case STATUS:
 	{
-		if (msg_received_len < sizeof(msg.config_ack))
+		if (current_msg_len < sizeof(msg.status))
 		{
 			return 0; // Message not complete. Keep waiting for more data.
 		}
-		LOG_DBG("UART \"CONFIG_ACK\" received");
+		LOG_DBG("UART \"STATUS\" received");
 		break;
 	}
 	case MOVEMENT_REPORTED:
 	{
-		if (msg_received_len < sizeof(msg.movement_reported))
+		if (current_msg_len < sizeof(msg.movement_reported))
 		{
 			return 0; // Message not complete. Keep waiting for more data.
 		}

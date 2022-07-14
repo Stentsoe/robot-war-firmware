@@ -19,8 +19,8 @@ static char *type_to_str(enum mesh_module_event_type type)
         return "MESH_EVT_READY";
     case MESH_EVT_ROBOT_ADDED:
         return "MESH_EVT_ROBOT_ADDED";
-    case MESH_EVT_CONFIG_ACK:
-        return "MESH_EVT_CONFIG_ACK";
+    case MESH_EVT_OP_STATUS:
+        return "MESH_EVT_OP_STATUS";
     case MESH_EVT_MOVEMENT_REPORTED:
         return "MESH_EVT_MOVEMENT_REPORTED";
     default:
