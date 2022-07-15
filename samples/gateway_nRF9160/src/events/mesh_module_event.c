@@ -23,6 +23,8 @@ static char *type_to_str(enum mesh_module_event_type type)
         return "MESH_EVT_OP_STATUS";
     case MESH_EVT_MOVEMENT_REPORTED:
         return "MESH_EVT_MOVEMENT_REPORTED";
+    case MESH_EVT_MOVEMENT_CONFIG_ACCEPTED:
+        return "MESH_EVT_MOVEMENT_CONFIG_ACCEPTED";
     default:
         return "UNKNOWN";
     }
