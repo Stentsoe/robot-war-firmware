@@ -87,6 +87,7 @@ static int uart_data_rx_rdy_handler(const struct device *dev, struct uart_event_
 	default:
 	{
 		LOG_ERR("Unknown message type %d", msg.header.type);
+		current_msg_len = 0;
 		return -EINVAL;
 	}
 	}
