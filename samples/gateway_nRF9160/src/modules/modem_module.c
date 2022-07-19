@@ -11,7 +11,6 @@
 #define MODULE modem_module
 
 #include "modules_common.h"
-#include "app_module_event.h"
 #include "modem_module_event.h"
 #include "ui_module_event.h"
 
@@ -27,7 +26,6 @@ static enum state_type {
 
 struct modem_msg_data {
 	union {
-		struct app_module_event app;
 		struct modem_module_event modem;
 		struct ui_module_event ui;
 	} module;
@@ -81,13 +79,6 @@ static bool app_event_handler(const struct app_event_header *aeh)
 	struct modem_msg_data msg = {0};
 	bool enqueue_msg = false;
 
-	if (is_app_module_event(aeh)) {
-		struct app_module_event *evt = cast_app_module_event(aeh);
-		
-		msg.module.app = *evt;
-		enqueue_msg = true;
-	}
-
 	if (is_modem_module_event(aeh)) {
 		struct modem_module_event *evt = cast_modem_module_event(aeh);
 		msg.module.modem = *evt;
@@ -137,20 +128,6 @@ static void lte_evt_handler(const struct lte_lc_evt *const evt)
 	}
 }
 
-/* Static module functions. */
-static int setup(void)
-{
-	int err;
-
-	err = lte_lc_init();
-	if (err) {
-		LOG_ERR("lte_lc_init, error: %d", err);
-		return err;
-	}
-
-	return err;
-}
-
 static int lte_connect(void)
 {
 	int err;
@@ -166,6 +143,29 @@ static int lte_connect(void)
 
 	return 0;
 }
+
+/* Static module functions. */
+static int setup(void)
+{
+	int err;
+
+	err = lte_lc_init();
+	if (err) {
+		LOG_ERR("lte_lc_init, error: %d", err);
+		return err;
+	}
+
+	err = lte_connect();
+	if (err) {
+		LOG_ERR("Failed connecting to LTE, error: %d", err);
+		SEND_ERROR(modem, MODEM_EVT_ERROR, err);
+		return err;
+	}
+
+	return err;
+}
+
+
 
 static int lte_disconnect(void)
 {
@@ -208,16 +208,7 @@ static void on_state_connected(struct modem_msg_data *msg)
 /* Message handler for all states. */
 static void on_all_states(struct modem_msg_data *msg)
 {
-		if (IS_EVENT(msg, app, APP_EVT_START)) {
-		int err;
 
-		err = lte_connect();
-		if (err) {
-			LOG_ERR("Failed connecting to LTE, error: %d", err);
-			SEND_ERROR(modem, MODEM_EVT_ERROR, err);
-			return;
-		}
-	}
 }
 
 static void module_thread_fn(void)
@@ -266,7 +257,6 @@ K_THREAD_DEFINE(modem_module_thread, CONFIG_MODEM_THREAD_STACK_SIZE,
 		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
 
 APP_EVENT_LISTENER(MODULE, app_event_handler);
-APP_EVENT_SUBSCRIBE(MODULE, app_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, modem_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, ui_module_event);
 
