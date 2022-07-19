@@ -8,7 +8,6 @@
 #include <zephyr/logging/log.h>
 
 #define MODULE main
-#include "app_module_event.h"
 #include "modules_common.h"
 
 #include <zephyr/logging/log.h>
@@ -18,7 +17,5 @@ void main(void)
 {
 	if (app_event_manager_init()) {
 		LOG_ERR("Application Event Manager not initialized");
-	} else {
-		SEND_EVENT(app, APP_EVT_START);
-	}
+	} 
 }

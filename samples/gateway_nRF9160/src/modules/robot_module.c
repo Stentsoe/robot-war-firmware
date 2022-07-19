@@ -15,7 +15,6 @@
 #define MODULE robot_module
 
 #include "modules_common.h"
-#include "app_module_event.h"
 #include "robot_module_event.h"
 #include "cloud_module_event.h"
 #include "mesh_module_event.h"
@@ -48,7 +47,6 @@ static sys_slist_t robot_list;
 
 struct robot_msg_data {
 	union {
-		struct app_module_event app;
 		struct ui_module_event ui;
 		struct robot_module_event robot;
 		struct cloud_module_event cloud;
@@ -514,13 +512,6 @@ static bool app_event_handler(const struct app_event_header *aeh)
 	struct robot_msg_data msg = {0};
 	bool enqueue_msg = false;
 
-	if (is_app_module_event(aeh)) {
-		struct app_module_event *evt = cast_app_module_event(aeh);
-		
-		msg.module.app = *evt;
-		enqueue_msg = true;
-	}
-
 	if (is_robot_module_event(aeh)) {
 		struct robot_module_event *evt = cast_robot_module_event(aeh);
 		msg.module.robot = *evt;
@@ -785,7 +776,6 @@ K_THREAD_DEFINE(robot_module_thread, CONFIG_ROBOT_THREAD_STACK_SIZE,
 		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
 
 APP_EVENT_LISTENER(MODULE, app_event_handler);
-APP_EVENT_SUBSCRIBE(MODULE, app_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, robot_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, cloud_module_event);
 APP_EVENT_SUBSCRIBE(MODULE, ui_module_event);
