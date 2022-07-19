@@ -107,32 +107,31 @@ sequenceDiagram
     participant gm as Gateway Module
     participant um as UART Module
     participant mm as Mesh Module
-    participant rx as Robot X
+    participant rn as Robot [1...N]
 
     loop For each robot stored stored in gateway module
     aws->>cm: Delta update 
     cm->>gm: Delta update 
     Note over gm: Store configuration
     loop For each robot stored in delta update
-        gm->>mm: Configure addr X
-        mm->>rx: Configure
-        Note over rx: Store configuration
-        rx->>mm: Confirm configuration
-        mm->>gm: Confirm configuration of X
-        Note over gm: Update state of X
+        gm->>mm: Configure addr N
+        mm->>rn: Configure
+        Note over rn: Store configuration
+        rn->>mm: Confirm configuration
+        mm->>gm: Confirm configuration of N
+        Note over gm: Update state of N
         gm->>cm: Configuration report
         cm->>aws: Reported update
     end
     end
 
-    gm->>mm: Clear to move
+    gm->>rn: Clear to move
 
     loop For each robot stored in gateway module
-        mm->>rx: Clear to move
-        Note over rx: Execute configuration
-        rx->>mm: Report telemetry
+        Note over rn: Execute configuration
+        rn->>mm: Report telemetry
         mm->>gm: Report telemetry
-        Note over gm: Update state of x
+        Note over gm: Update state of N
     end
         gm->>cm: Configuration report
         cm->>aws: Reported update
@@ -148,16 +147,16 @@ sequenceDiagram
     participant gm as Gateway Module
     participant um as UART Module
     participant mm as Mesh Module
-    participant rx as Robot X
+    participant rn as Robot [1...N]
 
     aws->>cm: Delta update 
     cm->>gm: Delta update 
     loop For each robot in delta update
-        gm->>mm: Configure addr X
-        mm->>rx: Configure
-        Note over rx: Execute LED configuration
-        rx->>mm: Confirm configuration
-        mm->>gm: Confirm configuration of X
+        gm->>mm: Configure addr N
+        mm->>rn: Configure
+        Note over rn: Execute LED configuration
+        rn->>mm: Confirm configuration
+        mm->>gm: Confirm configuration of N
         gm->>cm: Configuration report
         cm->>aws: Reported update
     end
