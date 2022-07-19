@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-
 enum robot_module_event_type {
 	ROBOT_EVT_REPORT,
 	ROBOT_EVT_CLEAR_ALL,

@@ -21,7 +21,6 @@
 extern "C" {
 #endif
 
-
 enum ui_module_event_type {
 	UI_EVT_BUTTON,
 	UI_EVT_LED,

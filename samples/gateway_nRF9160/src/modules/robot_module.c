@@ -23,7 +23,7 @@
 
 #include <zephyr/logging/log.h>
 #define ROBOT_MODULE_LOG_LEVEL 4
-LOG_MODULE_REGISTER(MODULE, ROBOT_MODULE_LOG_LEVEL);
+LOG_MODULE_REGISTER(MODULE, CONFIG_ROBOT_MODULE_LOG_LEVEL);
 
 /* Robot module super states. */
 static enum state_type {
@@ -751,6 +751,8 @@ static void module_thread_fn(void)
 	int err;
 	struct robot_msg_data msg;
 
+	LOG_INF("Robot module thread started");
+
 	self.thread_id = k_current_get();
 
 	err = module_start(&self);
@@ -759,7 +761,6 @@ static void module_thread_fn(void)
 		SEND_ERROR(robot, ROBOT_EVT_ERROR, err);
 	}
 
-	state_set(STATE_CLOUD_DISCONNECTED);
 	sys_slist_init(&robot_list);
 
 	while (true) {

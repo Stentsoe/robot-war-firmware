@@ -33,14 +33,10 @@ enum cloud_module_event_type {
 	CLOUD_EVT_ERROR,
 };
 
-#define CONFIG_NUM_ROBOTS 8
-
-
 struct publish_data {
 	char * ptr;
 	int len;
 };
-
 
 struct cloud_module_event {
 	struct app_event_header header;
