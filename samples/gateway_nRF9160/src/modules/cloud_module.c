@@ -20,7 +20,7 @@
 
 #include <zephyr/logging/log.h>
 #define CLOUD_MODULE_LOG_LEVEL 4
-LOG_MODULE_REGISTER(MODULE, CLOUD_MODULE_LOG_LEVEL);
+LOG_MODULE_REGISTER(MODULE, CONFIG_CLOUD_MODULE_LOG_LEVEL);
 
 #define TOPIC_UPDATE_DELTA "$aws/things/" CONFIG_AWS_IOT_CLIENT_ID_STATIC "/shadow/update/delta"
 #define TOPIC_GET_ACCEPTED "$aws/things/" CONFIG_AWS_IOT_CLIENT_ID_STATIC "/shadow/get/accepted"
@@ -40,7 +40,6 @@ struct cloud_msg_data {
 
 /* Cloud module super states. */
 static enum state_type {
-	STATE_INIT,
 	STATE_LTE_DISCONNECTED,
 	STATE_LTE_CONNECTED,
 } state;
@@ -89,8 +88,6 @@ static void connect_check_work_fn(struct k_work *work);
 static char *state2str(enum state_type state)
 {
 	switch (state) {
-	case STATE_INIT:
-		return "STATE_INIT";
 	case STATE_LTE_DISCONNECTED:
 		return "STATE_LTE_DISCONNECTED";
 	case STATE_LTE_CONNECTED:
@@ -186,22 +183,17 @@ static void cloud_event_handler(const struct aws_iot_evt *evt)
 {
 switch (evt->type) {
 	case AWS_IOT_EVT_CONNECTING: {
-		LOG_DBG("AWS_IOT_EVT_CONNECTING %d", evt->data.err);
 		SEND_EVENT(cloud, CLOUD_EVT_CONNECTING);
 		} break;
 	case AWS_IOT_EVT_CONNECTED: {
-		LOG_DBG("AWS_IOT_EVT_CONNECTED, err %d", evt->data.err);
 		SEND_EVENT(cloud, CLOUD_EVT_CONNECTED);
 		} break;
 	case AWS_IOT_EVT_READY:
-		LOG_DBG("AWS_IOT_EVT_READY");
 		break;
 	case AWS_IOT_EVT_DISCONNECTED: {
-		LOG_DBG("AWS_IOT_EVT_DISCONNECTED %d", evt->data.err);
 		SEND_EVENT(cloud, CLOUD_EVT_DISCONNECTED);
 		} break;
 	case AWS_IOT_EVT_DATA_RECEIVED: {
-		LOG_DBG("AWS_IOT_EVT_DATA_RECEIVED: %s", evt->data.msg.topic.str);
 		
 		if (is_topic(evt, TOPIC_UPDATE_DELTA)) {
 			LOG_DBG("received delta update of length %d", evt->data.msg.len);
@@ -215,7 +207,6 @@ switch (evt->type) {
 		
 	    } break;
 	case AWS_IOT_EVT_PUBACK: {
-		LOG_DBG("AWS_IOT_EVT_PUBACK");
 		int err;
 		err = qos_message_remove(evt->data.message_id);
 		if (err == -ENODATA) {
@@ -227,28 +218,8 @@ switch (evt->type) {
 		}
 		} break;
 	case AWS_IOT_EVT_PINGRESP:
-		LOG_DBG("AWS_IOT_EVT_PINGRESP");
-		break;
-	case AWS_IOT_EVT_FOTA_START:
-		LOG_DBG("AWS_IOT_EVT_FOTA_START");
-		break;
-	case AWS_IOT_EVT_FOTA_ERASE_PENDING:
-		LOG_DBG("AWS_IOT_EVT_FOTA_ERASE_PENDING");
-		break;
-	case AWS_IOT_EVT_FOTA_ERASE_DONE:
-		LOG_DBG("AWS_IOT_EVT_FOTA_ERASE_DONE");
-		break;
-	case AWS_IOT_EVT_FOTA_DONE:
-		LOG_DBG("AWS_IOT_EVT_FOTA_DONE");
-		break;
-	case AWS_IOT_EVT_FOTA_DL_PROGRESS:
-		/* Dont spam FOTA progress events. */
-		break;
-	case AWS_IOT_EVT_FOTA_ERROR:
-		LOG_DBG("AWS_IOT_EVT_FOTA_ERROR");
 		break;
 	case AWS_IOT_EVT_ERROR: {
-		LOG_DBG("AWS_IOT_EVT_ERROR");
 		SEND_ERROR(cloud, CLOUD_EVT_ERROR, evt->data.err);
 		} break;
 	default:
@@ -350,8 +321,8 @@ static void connect_cloud(void)
 
 	connect_retries++;
 
-	LOG_WRN("Cloud connection establishment in progress");
-	LOG_WRN("New connection attempt in %d seconds if not successful",
+	LOG_INF("Cloud connection establishment in progress");
+	LOG_INF("New connection attempt in %d seconds if not successful",
 		backoff_sec);
 
 	/* Start timer to check connection status after backoff */
@@ -414,21 +385,6 @@ static void connect_check_work_fn(struct k_work *work)
 	SEND_EVENT(cloud, CLOUD_EVT_CONNECTION_TIMEOUT);
 }
 
-/* Message handler for STATE_INIT. */
-static void on_state_init(struct cloud_msg_data *msg)
-{
-	if ((IS_EVENT(msg, modem, MODEM_EVT_INITIALIZED))) {
-		int err;
-
-		state_set(STATE_LTE_DISCONNECTED);
-		err = setup();
-		if (err) {
-			LOG_ERR("Failed setting up the cloud, error: %d", err);
-			SEND_ERROR(cloud, CLOUD_EVT_ERROR, err);
-		}
-	}	
-}
-
 /* Message handler for STATE_LTE_DISCONNECTED. */
 static void on_state_lte_disconnected(struct cloud_msg_data *msg)
 {
@@ -459,6 +415,7 @@ static void on_sub_state_cloud_disconnected(struct cloud_msg_data *msg)
 {
 	if (IS_EVENT(msg, cloud, CLOUD_EVT_CONNECTED)) {
 		sub_state_set(SUB_STATE_CLOUD_CONNECTED);
+		LOG_INF("Cloud connected");
 
 		connect_retries = 0;
 		k_work_cancel_delayable(&connect_check_work);
@@ -503,7 +460,7 @@ static void on_sub_state_cloud_connected(struct cloud_msg_data *msg)
 			.qos = MQTT_QOS_1_AT_LEAST_ONCE,
 			.topic.type = AWS_IOT_SHADOW_TOPIC_UPDATE,
 		};
-		LOG_INF("%s", qos_payload->buf);
+		LOG_DBG("Sending payload: %s", qos_payload->buf);
 		err = aws_iot_send(&message);
 		if (err) {
 			LOG_ERR("aws_iot_send, error: %d", err);
@@ -520,7 +477,7 @@ static void on_sub_state_cloud_connected(struct cloud_msg_data *msg)
 			.qos = MQTT_QOS_1_AT_LEAST_ONCE,
 			.topic.type = AWS_IOT_SHADOW_TOPIC_DELETE,
 		};
-		LOG_INF("%s", qos_payload->buf);
+
 		err = aws_iot_send(&message);
 		if (err) {
 			LOG_ERR("aws_iot_send, error: %d", err);
@@ -533,6 +490,8 @@ static void module_thread_fn(void)
 	int err;
 	struct cloud_msg_data msg;
 
+	LOG_INF("Cloud module thread started");
+
 	self.thread_id = k_current_get();
 
 	err = module_start(&self);
@@ -541,8 +500,11 @@ static void module_thread_fn(void)
 		SEND_ERROR(cloud, CLOUD_EVT_ERROR, err);
 	}
 
-	state_set(STATE_INIT);
-	sub_state_set(SUB_STATE_CLOUD_DISCONNECTED);
+	err = setup();
+	if (err) {
+		LOG_ERR("Failed setting up the cloud, error: %d", err);
+		SEND_ERROR(cloud, CLOUD_EVT_ERROR, err);
+	}
 
 	k_work_init_delayable(&connect_check_work, connect_check_work_fn);
 
@@ -550,9 +512,6 @@ static void module_thread_fn(void)
 		module_get_next_msg(&self, &msg);
 
 		switch (state) {
-		case STATE_INIT:
-			on_state_init(&msg);
-			break;
 		case STATE_LTE_DISCONNECTED:
 			on_state_lte_disconnected(&msg);
 			break;

@@ -20,9 +20,7 @@
 extern "C" {
 #endif
 
-
 enum modem_module_event_type {
-	MODEM_EVT_INITIALIZED,
 	MODEM_EVT_LTE_CONNECTING,
 	MODEM_EVT_LTE_CONNECTED,
 	MODEM_EVT_LTE_DISCONNECTED,

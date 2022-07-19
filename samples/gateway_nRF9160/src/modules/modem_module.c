@@ -16,8 +16,7 @@
 #include "ui_module_event.h"
 
 #include <zephyr/logging/log.h>
-#define MODEM_MODULE_LOG_LEVEL 4
-LOG_MODULE_REGISTER(MODULE, MODEM_MODULE_LOG_LEVEL);
+LOG_MODULE_REGISTER(MODULE, CONFIG_MODEM_MODULE_LOG_LEVEL);
 
 /* Modem module super states. */
 static enum state_type {
@@ -118,7 +117,6 @@ static void lte_evt_handler(const struct lte_lc_evt *const evt)
 {
 	switch (evt->type) {
 	case LTE_LC_EVT_NW_REG_STATUS: {
-		LOG_INF("nw_reg_status: %d", evt->nw_reg_status);
 		if (evt->nw_reg_status == LTE_LC_NW_REG_NOT_REGISTERED) {
 			SEND_EVENT(modem, MODEM_EVT_LTE_DISCONNECTED);
 			break;
@@ -129,7 +127,7 @@ static void lte_evt_handler(const struct lte_lc_evt *const evt)
 				break;
 		}
 
-        LOG_INF("Connected to: %s network\n",
+        LOG_INF("Connected to %s network",
              evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME ? "home" : "roaming");
 		SEND_EVENT(modem, MODEM_EVT_LTE_CONNECTED);
 		break;
@@ -225,6 +223,7 @@ static void on_all_states(struct modem_msg_data *msg)
 static void module_thread_fn(void)
 {
 	int err;
+	LOG_INF("Modem module thread started");
 	struct modem_msg_data msg;
 
 	self.thread_id = k_current_get();
@@ -234,9 +233,6 @@ static void module_thread_fn(void)
 		LOG_ERR("Failed starting module, error: %d", err);
 		SEND_ERROR(modem, MODEM_EVT_ERROR, err);
 	}
-
-	state_set(STATE_DISCONNECTED);
-	SEND_EVENT(modem, MODEM_EVT_INITIALIZED);
 
 	err = setup();
 	if (err) {

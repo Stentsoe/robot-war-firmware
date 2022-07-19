@@ -16,5 +16,10 @@ config CLOUD_CONNECT_RETRIES
 	help
 	  If the cloud module exceeds the number of reconnection attempts it will
 	  send out an error event.
-	  
+
+module = CLOUD_MODULE
+module-str = Cloud module
+source "subsys/logging/Kconfig.template.log_config"
+
 endmenu
+

@@ -21,7 +21,6 @@
 extern "C" {
 #endif
 
-
 enum mesh_module_event_type {
     MESH_EVT_READY, // Mesh module is ready to use.
 	MESH_EVT_ROBOT_ADDED, // Robot added to network.
