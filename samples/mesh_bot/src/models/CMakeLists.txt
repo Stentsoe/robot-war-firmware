@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 
 target_sources(app PRIVATE 
-    mesh_module.c
-    # motor_module.c
+    id_srv.c
+    movement_srv.c
+    robot_srv.c
 )

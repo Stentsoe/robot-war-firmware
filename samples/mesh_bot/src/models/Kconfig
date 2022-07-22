@@ -1,0 +1,4 @@
+
+menu "Models"
+rsource "Kconfig.*"
+endmenu
